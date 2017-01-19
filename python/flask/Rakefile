@@ -1,7 +1,11 @@
 
 ENV["FLASK_APP"] = "flaskr.py"
 
-task :db do
+task :install do
+  sh "pip install -r requirements.txt"
+end
+
+task :db => :install do
   sh "flask initdb"
 end
 
@@ -11,6 +15,10 @@ end
 
 task :uwsgi => :db do
   sh  "uwsgi -p 4 --http :9090 --manage-script-name --mount /=flaskr:app --enable-threads --thunder-lock"
+end
+
+task :gunicorn => :db do
+  sh "gunicorn flaskr:app --worker-class gevent --workers 4"
 end
 
 task :default => :run

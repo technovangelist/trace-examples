@@ -10,6 +10,10 @@
     :license: BSD, see LICENSE for more details.
 """
 
+from gevent import monkey
+monkey.patch_all()
+import gevent
+
 
 import os
 import logging
@@ -27,8 +31,8 @@ patch_all()
 
 # start a dummy trace here to ensure we start tracing
 # before we fork.
-with tracer.trace("aaaa"):
-    pass
+# with tracer.trace("aaaa"):
+#     pass
 
 tracer.debug_logging = True
 
@@ -90,10 +94,15 @@ def close_db(error):
 
 @app.route('/')
 def show_entries():
-    db = get_db()
-    cur = db.execute('select title, text from entries order by id desc')
-    entries = cur.fetchall()
-    return render_template('show_entries.html', entries=entries)
+    import os
+    app.logger.info("starting request in %s:%s", os.getpid(), id(gevent.getcurrent()))
+    try:
+        db = get_db()
+        cur = db.execute('select title, text from entries order by id desc')
+        entries = cur.fetchall()
+        return render_template('show_entries.html', entries=entries)
+    finally:
+        app.logger.info("done request in %s:%s", os.getpid(), id(gevent.getcurrent()))
 
 @app.route('/error')
 def error():
